@@ -49,7 +49,7 @@ export const RESEARCH = {
  frontier:{name:'Межпланетная связь',description:'Финальный проект: собственная орбитальная сеть.',cost:650000,seconds:3600,requires:['orbital'],materials:{science:900,satellites:10}},
  energy:{name:'Возобновляемая энергетика',description:'Солнечные парки. Расход энергии заводов −20%.',cost:22000,seconds:900,requires:['chemistry'],materials:{science:80,chips:100}},
  efficiency:{name:'Бережливое производство',description:'Весь выпуск +15%, без увеличения потребления.',cost:28000,seconds:600,requires:['agronomy'],materials:{science:70,food:150}},
- analytics:{name:'Торговая аналитика',description:'Закупки дешевле на 7%, продажа дороже на 5%.',cost:40000,seconds:720,requires:['engineering'],materials:{science:100,chips:150}},
+ analytics:{name:'Торговая аналитика',description:'Закупки дешевле на 7%, продажа дороже на 5%.',cost:40000,seconds:720,requires:['logistics'],materials:{chips:150}},
  civilEngineering:{name:'Гражданское строительство',description:'Открой карьер, производство цемента, стекла и строительных смесей.',cost:120000,seconds:900,requires:['engineering'],materials:{science:180,steel:250,machinery:25}},
  urbanSystems:{name:'Городские системы',description:'Жилые кварталы превращают стройматериалы в стабильный денежный поток.',cost:300000,seconds:1800,requires:['civilEngineering'],materials:{science:500,glass:180,buildingMaterials:100}}
 };

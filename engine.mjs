@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {initTrader,npcPrices,npcAction} from './exchange.mjs';
-import {sectorBonus} from './public/economy-config.mjs';
+import {SPECIALIZATIONS,sectorBonus,specializationAllowsBuilding,specializationAllowsResearch} from './public/economy-config.mjs';
 import {BUILDINGS, RESOURCES, RESEARCH, GOALS, MARKET_EVENTS, PROJECT} from './public/catalog.mjs';
 export const CAP = 999999;
 export const OFFLINE_LIMIT = 8*3600;
@@ -38,7 +38,8 @@ export function buildOffer(p,key){
  const b=BUILDINGS[key];if(!b)return null;
  const n=p.buildings[key]+p.queue.filter(q=>q.key===key).length;
  const factor=Math.pow(1.18,n);
- return {cost:Math.ceil(b.cost*factor),materials:Object.fromEntries(Object.entries(b.materials||{}).map(([k,v])=>[k,Math.ceil(v*(1+n*.1))])),seconds:Math.min(600,Math.ceil(b.time*(1+n*.12))),unlocked:unlocked(p,b),limit:n>=60};
+ const specializationOpen=specializationAllowsBuilding(p,key,b);
+ return {cost:Math.ceil(b.cost*factor),materials:Object.fromEntries(Object.entries(b.materials||{}).map(([k,v])=>[k,Math.ceil(v*(1+n*.1))])),seconds:Math.min(600,Math.ceil(b.time*(1+n*.12))),unlocked:unlocked(p,b)&&specializationOpen,specializationOpen,limit:n>=60};
 }
 export function makeContract(p,slot,stage){
  const keys=availableResources(p);const resource=keys[(slot+Math.floor(p.stats.contracts/3))%keys.length];
@@ -100,7 +101,7 @@ export function action(p,m,world,now=Date.now()) {
  const key=String(m.key||'');
  if(m.type==='build'||m.type==='upgrade'){
  if(!has(BUILDINGS,key))return fail('Неизвестное предприятие');const o=buildOffer(p,key);
- if(!o.unlocked)return fail('Сначала изучи требуемую технологию');if(o.limit)return fail('Лимит: 60 предприятий каждого типа');if(p.queue.length>=3)return fail('В очереди уже три строительства');
+ if(!o.specializationOpen)return fail(`Эту отрасль развивает специализация «${SPECIALIZATIONS[p.specialization]?.name||'Универсал'}»`);if(!unlocked(p,BUILDINGS[key]))return fail('Сначала изучи требуемую технологию');if(o.limit)return fail('Лимит: 60 предприятий каждого типа');if(p.queue.length>=3)return fail('В очереди уже три строительства');
  if(!affordable(p,o.cost,o.materials))return fail('Не хватает денег или строительных материалов');
  debit(p,o.cost,o.materials);const start=Math.max(now,p.queue.at(-1)?.end||0);p.queue.push({key,start,end:start+o.seconds*1000,cost:o.cost,materials:o.materials});
  return {ok:true,message:`В очереди: ${BUILDINGS[key].name}`};
@@ -109,6 +110,7 @@ export function action(p,m,world,now=Date.now()) {
  if(m.type==='pause'){if(!has(BUILDINGS,key)||!p.buildings[key])return fail('Предприятие ещё не построено');p.paused=p.paused.includes(key)?p.paused.filter(k=>k!==key):[...p.paused,key];return {ok:true,message:p.paused.includes(key)?'Производство приостановлено':'Производство возобновлено'};}
  if(m.type==='research'){
  if(!has(RESEARCH,key))return fail('Неизвестная технология');const r=RESEARCH[key];
+ if(!specializationAllowsResearch(p,key))return fail('Это исследование относится к другой специализации');
  if(p.tech.includes(key))return fail('Уже изучено');if(p.research)return fail('Исследовательская очередь занята');if(!r.requires.every(t=>p.tech.includes(t)))return fail('Изучи предыдущие технологии');
  if(!affordable(p,r.cost,r.materials))return fail('Не хватает денег или ресурсов для исследования');debit(p,r.cost,r.materials);p.research={key,start:now,end:now+r.seconds*1000,cost:r.cost,materials:r.materials};return {ok:true,message:`Начато: ${r.name}`};
  }

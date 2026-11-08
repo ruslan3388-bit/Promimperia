@@ -1,11 +1,12 @@
 import {renderExchange} from './exchange-ui.mjs';
 import {BUILDINGS,RESOURCES,SECTORS,RESEARCH,PROJECT} from './catalog.mjs';
+import {primarySector,SPECIALIZATIONS,buildingSpecialization,specializationAllowsBuilding,specializationAllowsResearch,researchSpecialization} from './economy-config.mjs';
 const $=s=>document.querySelector(s),fmt=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=n=>fmt.format(Math.floor(n||0));
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();tg.setHeaderColor?.('#101513');}
-let socket,own,world={},sector='all',timer,toastTimer,holdUntil=0,offset=0,economyHistory=[],historyOwner='',lastHistoryAt=0,pendingAction=null;
+let socket,own,world={},sector='base',lastSpecialty='',timer,toastTimer,holdUntil=0,offset=0,economyHistory=[],historyOwner='',lastHistoryAt=0,pendingAction=null;
 const now=()=>Date.now()+offset;
 const remaining=end=>{const n=Math.max(0,Math.ceil((end-now())/1000));return n>=3600?`${Math.floor(n/3600)} ч ${Math.floor(n%3600/60)} мин`:n>=60?`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`:`${n} сек`;};
 function html(id,markup){const el=$(id);if(el&&el.innerHTML!==markup)el.innerHTML=markup;}
@@ -60,6 +61,7 @@ function materials(items){return Object.entries(items||{}).map(([k,v])=>`<span c
 const canPay=(cost,items={})=>own.money>=cost&&Object.entries(items).every(([k,v])=>own.stock[k]>=v);
 const button=(label,type,key='',disabled=false,extra='')=>`<button class="action-btn" data-action="${type}" data-key="${key}" ${disabled?'disabled':''} ${extra}>${label}</button>`;
 function render(){if(!own||Date.now()<holdUntil)return;
+ if(own.specialization!==lastSpecialty){lastSpecialty=own.specialization;sector=primarySector(own,BUILDINGS);}
  const completed=own.tech.length;
  renderOnboarding();renderEconomy();renderCompletions();renderExchange(own,send);
  const chapter=own.victory&&own.tech.includes('urbanSystems')?6:own.victory?5:own.tech.includes('orbital')?4:own.tech.includes('engineering')?3:completed?2:1;
@@ -67,13 +69,15 @@ function render(){if(!own||Date.now()<holdUntil)return;
  html('#campaign-summary',`<div><small>ГЛАВА ${chapter} / 6</small><strong>${chapterName}</strong></div><div><b>${completed} / ${Object.keys(RESEARCH).length}</b><span>технологий</span></div><div><b>${num(own.stats.contracts)}</b><span>поставок выполнено</span></div><a href="#goals">Цели и награды ↗</a>`);
  const featured=['energy','ore','steel','science'];
   html('#metrics',`<article class="metric-card balance-card"><div class="metric-heading">КАПИТАЛ · ₽</div><div class="metric-value">${num(own.money)} ₽</div><div class="metric-foot">Денежный поток: ${(own.income||0)-(own.upkeep||0)>=0?'+':''}${((own.income||0)-(own.upkeep||0)).toFixed(1)} ₽/с<br>Доход +${(own.income||0).toFixed(1)} · обслуживание −${(own.upkeep||0).toFixed(1)} ₽/с</div></article>`+featured.map(k=>`<article class="metric-card"><div class="metric-heading">${RESOURCES[k].label} <span>${RESOURCES[k].icon}</span></div><div class="metric-value">${num(own.stock[k])}</div><div class="metric-foot">${(own.rates[k]||0)>=0?'+':''}${(own.rates[k]||0).toFixed(2)} / сек · лимит ${num(own.capacity)}</div><div class="meter"><i style="width:${Math.min(100,own.stock[k]/own.capacity*100)}%"></i></div></article>`).join(''));
- html('#sector-tabs',[['all','Все'],...Object.entries(SECTORS)].map(([k,v])=>`<button class="sector-tab ${sector===k?'selected':''}" data-sector="${k}">${v}</button>`).join(''));
+ const mainSector=primarySector(own,BUILDINGS),otherSectors=Object.entries(SECTORS).filter(([k])=>k!==mainSector);
+ html('#sector-tabs',`<button class="sector-tab ${sector===mainSector?'selected':''}" data-sector="${mainSector}">★ ${SECTORS[mainSector]}</button><details class="other-branches" ${sector!==mainSector?'open':''}><summary>${sector===mainSector?'Другие отрасли':'Просмотр отраслей'} · ${otherSectors.length}</summary><div>${otherSectors.map(([k,v])=>`<button class="sector-tab ${sector===k?'selected':''}" data-sector="${k}">⌑ ${v}</button>`).join('')}</div></details>`);
   const guides={all:'Сырьё → материалы → машины → роботы → спутники. Новая ветка: камень и песок → цемент и стекло → городской доход.',base:'Руда → сталь. Сталь + уголь → спецсплавы.',energy:'Уголь → ТЭЦ → энергия. Солнечные парки работают без топлива.',agro:'Зерно → пищевые продукты. Лесокомбинаты поставляют древесину.',chem:'Нефть + энергия → полимеры → машиностроение.',tech:'Сталь + полимеры + микросхемы → оборудование → роботы.',space:'Исследовательский центр → технологии. Роботы + сплавы + чипы → спутники.',construction:'Карьер → цемент и стекло → стройматериалы → жилые кварталы с постоянным доходом.'};
  $('#chain-guide').textContent=guides[sector];
  $('#factory-count').textContent=`${Object.values(own.buildings).reduce((a,b)=>a+b,0)} объектов`;
  html('#construction-queue',own.queue.length?`<b>Строительная очередь · ${own.queue.length}/3</b>`+own.queue.map((q,i)=>`<div class="queue-item"><span>${i+1}. ${BUILDINGS[q.key].name}</span><b>${remaining(q.end)}</b></div>`).join('')+button('Отменить последнюю · возврат 80%','cancelBuild'):'<span class="panel-help">Строительная очередь свободна · до трёх объектов</span>');
- html('#buildings',Object.entries(BUILDINGS).filter(([,b])=>sector==='all'||b.sector===sector).map(([key,b])=>{
+ html('#buildings',Object.entries(BUILDINGS).filter(([key,b])=>sector==='all'||b.sector===sector||key==='mine'||key==='power'||(sector===mainSector&&own.specialization!=='generalist'&&specializationAllowsBuilding(own,key,b))).map(([key,b])=>{
  const count=own.buildings[key],o=own.offers[key],state=own.status[key],paused=own.paused.includes(key);
+  if(!o.specializationOpen)return `<article class="branch-teaser"><span>🔒 ${b.icon} ${b.name}</span><small>Ветка: ${buildingSpecialization(key,b)}</small></article>`;
   const rates=Object.entries(b.rate).map(([k,v])=>`${v>0?'+':''}${v} ${RESOURCES[k].icon}/с`).join(' · '),income=b.income?`<br>Доход ${b.income} ₽/с на объект`:'';
   return `<article class="building-card ${!o.unlocked?'locked':''}"><div class="building-icon">${b.icon}</div><div class="building-info"><div class="building-name">${b.name}<span class="level-pill">×${count}</span></div><div class="building-desc">${rates}<br>Обслуживание ${b.upkeep} ₽/с на объект${income}</div><div class="plant-status ${state?.efficiency<100?'shortage':''}">${count?esc(state?.reason||'Запуск…')+' · '+(state?.efficiency||0)+'%':o.unlocked?'Готово к строительству':'Нужно: '+RESEARCH[b.tech].name}</div><div class="materials">${materials(o.materials)}</div></div><div class="building-actions">${button(`${count?'Расширить':'Строить'} · ${num(o.cost)} ₽<small>${Math.ceil(o.seconds/60)} мин</small>`,'build',key,!o.unlocked||o.limit||own.queue.length>=3||!canPay(o.cost,o.materials))}${count?button(paused?'▶ Запустить':'Ⅱ Пауза','pause',key):''}</div></article>`;
  }).join(''));
@@ -97,10 +101,9 @@ function renderMarket(){
 function renderResearch(){
  $('#research-count').textContent=`${own.tech.length} / ${Object.keys(RESEARCH).length}`;
  html('#research-queue',own.research?`<div class="queue-item"><span>${RESEARCH[own.research.key].name} · ${remaining(own.research.end)}</span>${button('Отменить · 80%','cancelResearch')}</div>`:'<p class="panel-help">Очередь исследований свободна</p>');
- html('#research-list',Object.entries(RESEARCH).map(([key,r])=>{
- const done=own.tech.includes(key),active=own.research?.key===key,locked=!r.requires.every(k=>own.tech.includes(k));
- return `<article class="tech-card ${done?'complete':''}"><div class="tech-heading"><b>${r.name}</b><span>${done?'✓ Изучено':active?remaining(own.research.end):`${r.seconds/60} мин`}</span></div><p>${r.description}</p><div class="materials">${materials(r.materials)}</div><small>${r.requires.length?'После: '+r.requires.map(k=>RESEARCH[k].name).join(', '):'Начальная технология'}</small>${button(done?'Изучено':active?'Исследуется':`Изучить · ${num(r.cost)} ₽`,'research',key,done||!!own.research||locked||!canPay(r.cost,r.materials))}</article>`;
- }).join(''));
+ const entries=Object.entries(RESEARCH),active=entries.filter(([key])=>specializationAllowsResearch(own,key)),other=entries.filter(([key])=>!specializationAllowsResearch(own,key));
+ const cards=([key,r])=>{const done=own.tech.includes(key),running=own.research?.key===key,prerequisiteLocked=!r.requires.every(k=>own.tech.includes(k));return `<article class="tech-card ${done?'complete':''}"><div class="tech-heading"><b>${r.name}</b><span>${done?'✓ Изучено':running?remaining(own.research.end):`${r.seconds/60} мин`}</span></div><p>${r.description}</p><div class="materials">${materials(r.materials)}</div><small>${r.requires.length?'После: '+r.requires.map(k=>RESEARCH[k].name).join(', '):'Начальная технология'}</small>${button(done?'Изучено':running?'Исследуется':`Изучить · ${num(r.cost)} ₽`,'research',key,done||!!own.research||prerequisiteLocked||!canPay(r.cost,r.materials))}</article>`;};
+ html('#research-list',active.map(cards).join('')+(other.length?`<details class="locked-tech"><summary>Другие направления · ${other.length}</summary>${other.map(([key,r])=>`<div class="branch-teaser"><span>🔒 ${r.name}</span><small>${researchSpecialization(key)}</small></div>`).join('')}</details>`:''));
 }
 function renderGoals(){
  html('#goals-list',own.goals.map(g=>`<article class="goal-card ${g.claimed?'complete':''}"><b>${g.name}</b><p>${g.description}</p><div class="contract-progress-row"><span>${num(g.progress)} / ${num(g.target)}</span><span>+${num(g.reward)} ₽ · ${g.science} 🔬</span></div><div class="contract-meter"><i style="width:${g.progress/g.target*100}%"></i></div>${button(g.claimed?'Награда получена':'Забрать награду','claim',g.id,g.claimed||g.progress<g.target)}</article>`).join(''));
