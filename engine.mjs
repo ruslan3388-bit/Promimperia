@@ -24,7 +24,7 @@ export function normalizePlayer(raw,now=Date.now()) {
  p.contracts=Array.isArray(raw.contracts)?raw.contracts.filter(c=>has(RESOURCES,c.resource)&&c.amount>0&&c.reward>0&&c.id).slice(0,3):[];
  while(p.contracts.length<3)p.contracts.push(makeContract(p,p.contracts.length,0));
  p.project=raw.project&&Number.isFinite(raw.project.end)?raw.project:null;p.victory=Boolean(raw.victory);
- p.status={};p.rates={};p.upkeep=0;
+ p.status={};p.rates={};p.upkeep=0;p.income=0;
  return p;
 }
 export const capacity=p=>Math.min(CAP,5000*(1+p.warehouse));
@@ -52,7 +52,12 @@ export function quote(p,world,key,side,now){const price=market(world,now).prices
 function affordable(p,cost,materials={}){return p.money>=cost&&Object.entries(materials).every(([k,v])=>p.stock[k]>=v);}
 function debit(p,cost,materials={}){p.money-=cost;for(const[k,v]of Object.entries(materials))p.stock[k]-=v;}
 function refund(p,item){p.money+=Math.floor(item.cost*.8);for(const[k,v]of Object.entries(item.materials||{}))p.stock[k]=Math.min(CAP,p.stock[k]+Math.floor(v*.8));}
-export function goalProgress(p,g){return g.kind==='buildings'?Object.values(p.buildings).reduce((s,n)=>s+n,0):g.kind==='contracts'?p.stats.contracts:g.kind==='research'?p.tech.length:g.kind==='victory'?Number(p.victory):finite(p.stats.produced[g.kind]);}
+export function goalProgress(p,g){
+ if(g.kind==='buildings')return Object.values(p.buildings).reduce((s,n)=>s+n,0);
+ if(g.kind==='sectorBuildings')return Object.entries(p.buildings).reduce((s,[k,n])=>s+(BUILDINGS[k].sector===g.sector?n:0),0);
+ if(g.kind==='buildingCount')return finite(p.buildings[g.building]);
+ return g.kind==='contracts'?p.stats.contracts:g.kind==='research'?p.tech.length:g.kind==='victory'?Number(p.victory):finite(p.stats.produced[g.kind]);
+}
 export function advance(p,seconds,now=Date.now()) {
  const notices=[];
  while(p.queue.length&&p.queue[0].end<=now){const q=p.queue.shift();p.buildings[q.key]++;notices.push(`${BUILDINGS[q.key].name}: строительство завершено`);}
@@ -60,7 +65,7 @@ export function advance(p,seconds,now=Date.now()) {
  if(p.project&&p.project.end<=now){p.project=null;p.victory=true;notices.push('Орбитальная сеть запущена! Кампания завершена, регион продолжает работать.');}
  updateOnboarding(p);
  if(seconds<=0)return notices;
- const before={...p.stock};p.status={};p.upkeep=0;
+ const before={...p.stock};p.status={};p.upkeep=0;p.income=0;
  const outputBonus=1+(p.tech.includes('efficiency')?.15:0)+(p.tech.includes('automation')?.1:0);
  const order=Object.entries(BUILDINGS).sort(([,a],[,b])=>Number(b.rate.energy>0)-Number(a.rate.energy>0));
  for(const[key,b]of order){
@@ -72,9 +77,10 @@ export function advance(p,seconds,now=Date.now()) {
  const limit=v<0?p.stock[k]/-v:Math.max(0,capacity(p)-p.stock[k])/v;
  if(limit<scale){scale=Math.max(0,limit);reason=v<0?`Не хватает: ${RESOURCES[k].label}`:`Склад заполнен: ${RESOURCES[k].label}`;}
  }
- if(upkeep>0&&p.money/upkeep<scale){scale=p.money/upkeep;reason='Нет средств на обслуживание';}
+ const income=(b.income||0)*count*seconds,cashBurn=Math.max(0,upkeep-income);
+ if(cashBurn>0&&p.money/cashBurn<scale){scale=p.money/cashBurn;reason='Нет средств на обслуживание';}
  for(const[k,v]of Object.entries(flows)){p.stock[k]=Math.max(0,p.stock[k]+v*scale);if(v>0)p.stats.produced[k]=finite(p.stats.produced[k])+v*scale;}
- p.money=Math.max(0,p.money-upkeep*scale);p.upkeep+=upkeep*scale/seconds;p.status[key]={efficiency:Math.round(scale*100),reason};
+ p.money=Math.min(1e15,Math.max(0,p.money+(income-upkeep)*scale));p.upkeep+=upkeep*scale/seconds;p.income+=income*scale/seconds;p.status[key]={efficiency:Math.round(scale*100),reason};
  }
  p.rates=Object.fromEntries(Object.keys(RESOURCES).map(k=>[k,(p.stock[k]-before[k])/seconds]));updateOnboarding(p);return notices;
 }

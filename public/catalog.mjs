@@ -1,11 +1,13 @@
-export const VERSION = '3.0';
+export const VERSION = '3.1';
 export const RESOURCES = {
  ore:{label:'Руда',icon:'🪨',price:12}, energy:{label:'Энергия',icon:'⚡',price:8}, steel:{label:'Сталь',icon:'🔩',price:42}, chips:{label:'Микросхемы',icon:'💠',price:180},
  coal:{label:'Уголь',icon:'⬛',price:10}, timber:{label:'Древесина',icon:'🪵',price:14}, grain:{label:'Зерно',icon:'🌾',price:6}, food:{label:'Продукты',icon:'🍞',price:28},
  oil:{label:'Нефть',icon:'🛢️',price:24}, plastic:{label:'Полимеры',icon:'🧪',price:70}, alloy:{label:'Сплавы',icon:'⚙️',price:135}, machinery:{label:'Оборудование',icon:'🏗️',price:450},
- robots:{label:'Роботы',icon:'🤖',price:1800}, satellites:{label:'Спутники',icon:'🛰️',price:12000}, science:{label:'Наука',icon:'🔬',price:0}
+ robots:{label:'Роботы',icon:'🤖',price:1800}, satellites:{label:'Спутники',icon:'🛰️',price:12000},
+ stone:{label:'Камень',icon:'🪨',price:9}, sand:{label:'Песок',icon:'🏖️',price:7}, cement:{label:'Цемент',icon:'🧱',price:32}, glass:{label:'Стекло',icon:'🪟',price:68}, buildingMaterials:{label:'Стройматериалы',icon:'🏗️',price:150},
+ science:{label:'Наука',icon:'🔬',price:0}
 };
-export const SECTORS = {base:'Добыча и металлургия',energy:'Энергетика',agro:'Агропром и лес',chem:'Нефтехимия',tech:'Машиностроение',space:'Наука и космос'};
+export const SECTORS = {base:'Добыча и металлургия',energy:'Энергетика',agro:'Агропром и лес',chem:'Нефтехимия',tech:'Машиностроение',space:'Наука и космос',construction:'Строительство'};
 export const BUILDINGS = {
  mine:{name:'Рудник',icon:'⛏️',sector:'base',cost:600,time:15,rate:{ore:1.4},upkeep:0},
  power:{name:'Электростанция',icon:'⚡',sector:'energy',cost:700,time:15,rate:{energy:2},upkeep:0},
@@ -23,7 +25,12 @@ export const BUILDINGS = {
  machinePlant:{name:'Машиностроительный завод',icon:'🏗️',sector:'tech',cost:48000,time:180,tech:'engineering',materials:{alloy:40,chips:50},rate:{steel:-.65,plastic:-.2,chips:-.08,energy:-1.5,machinery:.22},upkeep:2.5},
  university:{name:'Исследовательский центр',icon:'🔬',sector:'space',cost:6000,time:90,tech:'logistics',materials:{steel:40},rate:{energy:-.8,science:.08},upkeep:.7},
  robotics:{name:'Фабрика роботов',icon:'🤖',sector:'tech',cost:110000,time:240,tech:'automation',materials:{machinery:35,alloy:100},rate:{machinery:-.12,chips:-.25,plastic:-.3,energy:-2.5,robots:.12},upkeep:4},
- spaceport:{name:'Орбитальная верфь',icon:'🚀',sector:'space',cost:320000,time:300,tech:'orbital',materials:{robots:40,alloy:300},rate:{robots:-.08,alloy:-.5,chips:-.35,energy:-4,satellites:.035},upkeep:8}
+ spaceport:{name:'Орбитальная верфь',icon:'🚀',sector:'space',cost:320000,time:300,tech:'orbital',materials:{robots:40,alloy:300},rate:{robots:-.08,alloy:-.5,chips:-.35,energy:-4,satellites:.035},upkeep:8},
+ quarry:{name:'Карьер нерудных материалов',icon:'⛏️',sector:'construction',cost:15000,time:120,tech:'civilEngineering',rate:{energy:-.12,stone:1.4,sand:.9},upkeep:.45},
+ cementWorks:{name:'Цементный завод',icon:'🧱',sector:'construction',cost:28000,time:180,tech:'civilEngineering',materials:{steel:120},rate:{stone:-1,coal:-.18,energy:-.6,cement:.72},upkeep:1.1},
+ glassworks:{name:'Стекольный комбинат',icon:'🪟',sector:'construction',cost:38000,time:210,tech:'civilEngineering',materials:{steel:150},rate:{sand:-.65,coal:-.15,energy:-.75,glass:.48},upkeep:1.3},
+ materialsPlant:{name:'Завод стройматериалов',icon:'🏗️',sector:'construction',cost:80000,time:240,tech:'civilEngineering',materials:{steel:200,machinery:15},rate:{cement:-.5,glass:-.28,steel:-.18,energy:-1,buildingMaterials:.24},upkeep:1.8},
+ residential:{name:'Жилой квартал',icon:'🏙️',sector:'construction',cost:210000,time:240,tech:'urbanSystems',materials:{buildingMaterials:60,glass:40,steel:120},rate:{energy:-.5},upkeep:2,income:24}
 };
 export const RESEARCH = {
  logistics:{name:'Промышленная логистика',description:'Уголь, ТЭЦ, научные центры и новые поставки.',cost:3500,seconds:180,requires:[],materials:{}},
@@ -36,7 +43,9 @@ export const RESEARCH = {
  frontier:{name:'Межпланетная связь',description:'Финальный проект: собственная орбитальная сеть.',cost:650000,seconds:3600,requires:['orbital'],materials:{science:900,satellites:10}},
  energy:{name:'Возобновляемая энергетика',description:'Солнечные парки. Расход энергии заводов −20%.',cost:22000,seconds:900,requires:['chemistry'],materials:{science:80,chips:100}},
  efficiency:{name:'Бережливое производство',description:'Весь выпуск +15%, без увеличения потребления.',cost:28000,seconds:600,requires:['agronomy'],materials:{science:70,food:150}},
- analytics:{name:'Торговая аналитика',description:'Закупки дешевле на 7%, продажа дороже на 5%.',cost:40000,seconds:720,requires:['engineering'],materials:{science:100,chips:150}}
+ analytics:{name:'Торговая аналитика',description:'Закупки дешевле на 7%, продажа дороже на 5%.',cost:40000,seconds:720,requires:['engineering'],materials:{science:100,chips:150}},
+ civilEngineering:{name:'Гражданское строительство',description:'Открой карьер, производство цемента, стекла и строительных смесей.',cost:120000,seconds:900,requires:['engineering'],materials:{science:180,steel:250,machinery:25}},
+ urbanSystems:{name:'Городские системы',description:'Жилые кварталы превращают стройматериалы в стабильный денежный поток.',cost:300000,seconds:1800,requires:['civilEngineering'],materials:{science:500,glass:180,buildingMaterials:100}}
 };
 export const GOALS = [
  {id:'foundation',name:'Промышленная площадка',description:'Построй 5 предприятий',kind:'buildings',target:5,reward:3000,science:10},
@@ -46,7 +55,10 @@ export const GOALS = [
  {id:'engineer',name:'Серийное производство',description:'Произведи 300 единиц оборудования',kind:'machinery',target:300,reward:70000,science:150},
  {id:'robot',name:'Автономная фабрика',description:'Произведи 500 роботов',kind:'robots',target:500,reward:160000,science:250},
  {id:'orbit',name:'Выход на орбиту',description:'Произведи 30 спутников',kind:'satellites',target:30,reward:260000,science:300},
- {id:'network',name:'Орбитальная сеть',description:'Заверши мегапроект орбитальной связи',kind:'victory',target:1,reward:1000000,science:1000}
+ {id:'network',name:'Орбитальная сеть',description:'Заверши мегапроект орбитальной связи',kind:'victory',target:1,reward:1000000,science:1000},
+ {id:'civilWorks',name:'Строительный кластер',description:'Построй 10 предприятий строительной отрасли',kind:'sectorBuildings',sector:'construction',target:10,reward:180000,science:260},
+ {id:'materials',name:'Новая городская ткань',description:'Произведи 500 единиц стройматериалов',kind:'buildingMaterials',target:500,reward:240000,science:400},
+ {id:'districts',name:'Городской архитектор',description:'Построй 5 жилых кварталов',kind:'buildingCount',building:'residential',target:5,reward:500000,science:700}
 ];
 export const PROJECT = {name:'Орбитальная сеть',cost:500000,seconds:600,materials:{satellites:30,robots:200,alloy:1000},tech:'frontier'};
 export const MARKET_EVENTS = [
@@ -54,5 +66,6 @@ export const MARKET_EVENTS = [
  {name:'Строительный бум',text:'Регион скупает металл, древесину и оборудование.',boost:{steel:1.25,timber:1.3,machinery:1.2}},
  {name:'Энергетический пик',text:'Повышенный спрос на энергию, уголь и нефть.',boost:{energy:1.3,coal:1.25,oil:1.2}},
  {name:'Экспортный сезон',text:'Продукты и полимеры пользуются особым спросом.',boost:{food:1.35,grain:1.2,plastic:1.25}},
- {name:'Технологическая выставка',text:'Покупатели ищут микросхемы, роботов и спутники.',boost:{chips:1.25,robots:1.3,satellites:1.2}}
+ {name:'Технологическая выставка',text:'Покупатели ищут микросхемы, роботов и спутники.',boost:{chips:1.25,robots:1.3,satellites:1.2}},
+ {name:'Городская застройка',text:'Регион ускоряет жилое строительство и закупает материалы.',boost:{stone:1.2,cement:1.3,glass:1.25,buildingMaterials:1.35}}
 ];
