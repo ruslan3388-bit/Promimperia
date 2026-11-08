@@ -9,7 +9,7 @@ function acquire(materials,budget,t){
  for(const[k,n]of Object.entries(materials||{})){if(k==='science'||!availableResources(p).includes(k))continue;const need=Math.ceil(Math.max(0,n-p.stock[k]));if(need&&need<=5000&&p.money-need*quote(p,world,k,'buy',t)>=budget)action(p,{type:'buy',key:k,amount:need},world,t);}
 }
 let finish=null;
-for(let sec=5;sec<=8*3600;sec+=5){
+for(let sec=5;sec<=24*3600;sec+=5){
  const t=start+sec*1000;advance(p,5,t);
  if(p.victory){finish=sec;break;}
  if(sec%30)continue;

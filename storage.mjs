@@ -7,7 +7,7 @@ export function createStore(path){
   catch(e){if(e.code==='ENOENT')return null;throw Error('Cannot load saved campaign; existing file was preserved',{cause:e});}
  }
  function save(data){
-  const payload=JSON.stringify({...data,version:3,savedAt:Date.now()});
+  const payload=JSON.stringify({...data,version:4,savedAt:Date.now()});
   const task=queue.catch(()=>{}).then(async()=>{
    await mkdir(dirname(path),{recursive:true});const temp=path+'.tmp';
    await writeFile(temp,payload,'utf8');

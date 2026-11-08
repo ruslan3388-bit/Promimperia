@@ -1,23 +1,29 @@
-export const VERSION = '3.1';
+export const VERSION = '4.0';
 export const RESOURCES = {
  ore:{label:'Руда',icon:'🪨',price:12}, energy:{label:'Энергия',icon:'⚡',price:8}, steel:{label:'Сталь',icon:'🔩',price:42}, chips:{label:'Микросхемы',icon:'💠',price:180},
  coal:{label:'Уголь',icon:'⬛',price:10}, timber:{label:'Древесина',icon:'🪵',price:14}, grain:{label:'Зерно',icon:'🌾',price:6}, food:{label:'Продукты',icon:'🍞',price:28},
  oil:{label:'Нефть',icon:'🛢️',price:24}, plastic:{label:'Полимеры',icon:'🧪',price:70}, alloy:{label:'Сплавы',icon:'⚙️',price:135}, machinery:{label:'Оборудование',icon:'🏗️',price:450},
  robots:{label:'Роботы',icon:'🤖',price:1800}, satellites:{label:'Спутники',icon:'🛰️',price:12000},
  stone:{label:'Камень',icon:'🪨',price:9}, sand:{label:'Песок',icon:'🏖️',price:7}, cement:{label:'Цемент',icon:'🧱',price:32}, glass:{label:'Стекло',icon:'🪟',price:68}, buildingMaterials:{label:'Стройматериалы',icon:'🏗️',price:150},
+ boards:{label:'Доски',icon:'🪵',price:28}, flour:{label:'Мука',icon:'🌾',price:12}, bread:{label:'Хлеб',icon:'🍞',price:24}, fabric:{label:'Ткань',icon:'🧵',price:48}, clothing:{label:'Рабочая одежда',icon:'👕',price:110},
  science:{label:'Наука',icon:'🔬',price:0}
 };
 export const SECTORS = {base:'Добыча и металлургия',energy:'Энергетика',agro:'Агропром и лес',chem:'Нефтехимия',tech:'Машиностроение',space:'Наука и космос',construction:'Строительство'};
 export const BUILDINGS = {
+ boardMill:{name:'Столярная мастерская',icon:'🪚',sector:'agro',cost:950,time:30,rate:{timber:-.5,energy:-.1,boards:.4},upkeep:.12},
+ mill:{name:'Мельница',icon:'🌾',sector:'agro',cost:800,time:25,rate:{grain:-.8,energy:-.1,flour:.6},upkeep:.1},
+ bakery:{name:'Пекарня',icon:'🍞',sector:'agro',cost:1200,time:35,materials:{boards:10},rate:{flour:-.5,energy:-.15,bread:.4},upkeep:.15},
+ textile:{name:'Текстильная фабрика',icon:'🧵',sector:'agro',cost:8000,time:80,tech:'agronomy',materials:{boards:30,steel:30},rate:{grain:-.4,energy:-.3,fabric:.15},upkeep:.4},
+ tailor:{name:'Швейная фабрика',icon:'👕',sector:'agro',cost:12000,time:100,tech:'agronomy',materials:{boards:40,steel:40},rate:{fabric:-.2,energy:-.25,clothing:.12},upkeep:.5},
  mine:{name:'Рудник',icon:'⛏️',sector:'base',cost:600,time:15,rate:{ore:1.4},upkeep:0},
  power:{name:'Электростанция',icon:'⚡',sector:'energy',cost:700,time:15,rate:{energy:2},upkeep:0},
- smelter:{name:'Плавильня',icon:'🔥',sector:'base',cost:850,time:30,rate:{ore:-1.1,energy:-.35,steel:.65},upkeep:.25},
- lab:{name:'Микролаборатория',icon:'💠',sector:'tech',cost:1400,time:40,rate:{steel:-.3,energy:-.55,chips:.16},upkeep:.4},
+ smelter:{materials:{boards:8},name:'Плавильня',icon:'🔥',sector:'base',cost:850,time:30,rate:{ore:-1.1,energy:-.35,steel:.65},upkeep:.25},
+ lab:{materials:{boards:12},name:'Микролаборатория',icon:'💠',sector:'tech',cost:1400,time:40,rate:{steel:-.3,energy:-.55,chips:.16},upkeep:.4},
  coalMine:{name:'Угольный разрез',icon:'⬛',sector:'base',cost:1800,time:35,tech:'logistics',rate:{coal:1.2,energy:-.15},upkeep:.2},
- thermal:{name:'Теплоэлектроцентраль',icon:'🏭',sector:'energy',cost:4200,time:60,tech:'logistics',materials:{steel:30},rate:{coal:-.6,energy:9},upkeep:.8},
+ thermal:{name:'Теплоэлектроцентраль',icon:'🏭',sector:'energy',cost:4200,time:60,tech:'logistics',materials:{steel:30,boards:20},rate:{coal:-.6,energy:9},upkeep:.8},
  solar:{name:'Солнечный парк',icon:'☀️',sector:'energy',cost:18000,time:120,tech:'energy',materials:{steel:100,chips:30},rate:{energy:7},upkeep:.15},
- sawmill:{name:'Лесокомбинат',icon:'🪵',sector:'agro',cost:2400,time:45,tech:'agronomy',rate:{energy:-.25,timber:.9},upkeep:.3},
- farm:{name:'Агрокомплекс',icon:'🌾',sector:'agro',cost:2800,time:45,tech:'agronomy',rate:{energy:-.35,grain:2.5},upkeep:.5},
+ sawmill:{name:'Лесокомбинат',icon:'🪵',sector:'agro',cost:2400,time:45,rate:{energy:-.25,timber:.9},upkeep:.3},
+ farm:{name:'Агрокомплекс',icon:'🌾',sector:'agro',cost:2800,time:45,rate:{energy:-.35,grain:2.5},upkeep:.5},
  foodPlant:{name:'Пищевой комбинат',icon:'🍞',sector:'agro',cost:6500,time:80,tech:'agronomy',materials:{steel:30,timber:50},rate:{grain:-1.8,energy:-.4,food:.8},upkeep:.8},
  oilWell:{name:'Нефтяная вышка',icon:'🛢️',sector:'chem',cost:9000,time:90,tech:'chemistry',materials:{steel:80},rate:{energy:-.8,oil:1.1},upkeep:1.2},
  refinery:{name:'Полимерный завод',icon:'🧪',sector:'chem',cost:17000,time:120,tech:'chemistry',materials:{steel:150,chips:20},rate:{oil:-.7,energy:-1.2,plastic:.65},upkeep:1.5},
@@ -29,8 +35,8 @@ export const BUILDINGS = {
  quarry:{name:'Карьер нерудных материалов',icon:'⛏️',sector:'construction',cost:15000,time:120,tech:'civilEngineering',rate:{energy:-.12,stone:1.4,sand:.9},upkeep:.45},
  cementWorks:{name:'Цементный завод',icon:'🧱',sector:'construction',cost:28000,time:180,tech:'civilEngineering',materials:{steel:120},rate:{stone:-1,coal:-.18,energy:-.6,cement:.72},upkeep:1.1},
  glassworks:{name:'Стекольный комбинат',icon:'🪟',sector:'construction',cost:38000,time:210,tech:'civilEngineering',materials:{steel:150},rate:{sand:-.65,coal:-.15,energy:-.75,glass:.48},upkeep:1.3},
- materialsPlant:{name:'Завод стройматериалов',icon:'🏗️',sector:'construction',cost:80000,time:240,tech:'civilEngineering',materials:{steel:200,machinery:15},rate:{cement:-.5,glass:-.28,steel:-.18,energy:-1,buildingMaterials:.24},upkeep:1.8},
- residential:{name:'Жилой квартал',icon:'🏙️',sector:'construction',cost:210000,time:240,tech:'urbanSystems',materials:{buildingMaterials:60,glass:40,steel:120},rate:{energy:-.5},upkeep:2,income:24}
+ materialsPlant:{name:'Завод стройматериалов',icon:'🏗️',sector:'construction',cost:80000,time:240,tech:'civilEngineering',materials:{steel:200,machinery:15,boards:80,clothing:20},rate:{cement:-.5,glass:-.28,steel:-.18,energy:-1,buildingMaterials:.4},upkeep:1.8},
+ residential:{name:'Жилой квартал',icon:'🏙️',sector:'construction',cost:210000,time:240,tech:'urbanSystems',materials:{buildingMaterials:60,glass:40,steel:120,boards:80,clothing:20},rate:{energy:-.5},upkeep:2,income:24}
 };
 export const RESEARCH = {
  logistics:{name:'Промышленная логистика',description:'Уголь, ТЭЦ, научные центры и новые поставки.',cost:3500,seconds:180,requires:[],materials:{}},

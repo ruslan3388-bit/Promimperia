@@ -1,3 +1,4 @@
+import {renderExchange} from './exchange-ui.mjs';
 import {BUILDINGS,RESOURCES,SECTORS,RESEARCH,PROJECT} from './catalog.mjs';
 const $=s=>document.querySelector(s),fmt=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,7 +10,7 @@ const now=()=>Date.now()+offset;
 const remaining=end=>{const n=Math.max(0,Math.ceil((end-now())/1000));return n>=3600?`${Math.floor(n/3600)} ч ${Math.floor(n%3600/60)} мин`:n>=60?`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`:`${n} сек`;};
 function html(id,markup){const el=$(id);if(el&&el.innerHTML!==markup)el.innerHTML=markup;}
 function toast(text,error=false){$('#toast').textContent=text;$('#toast').classList.toggle('error',error);$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4000);}
-function send(m){if(socket?.readyState!==WebSocket.OPEN||!own)return toast('Дождись подключения к региону',true);socket.send(JSON.stringify(m));}
+function send(m){if(socket?.readyState!==WebSocket.OPEN||!own)return toast('Дождись подключения к региону',true);socket.send(JSON.stringify({...m,requestId:crypto.randomUUID()}));}
 const historyKey=id=>`industrial-economy-history-${id}`;
 function captureEconomy(){
  if(!own)return;
@@ -21,6 +22,7 @@ function captureEconomy(){
 }
 function onboarding(){
  const step=own.onboardingStep||0;
+ if(!own.specializationAt)return {n:1,total:1,done:0,title:'Выбери роль в экономике региона',description:'Пекарь, лесопромышленник, металлург или торговец? Специализация даёт преимущество, а базовые цепочки доступны всем.',href:'#exchange',cta:'Выбрать профессию',progress:'Первый выбор бесплатно'};
  if(step>=4){
   if(!own.tech.includes('engineering'))return {n:5,total:7,done:4,title:'Подготовь промышленную базу',description:'Изучи тяжёлое машиностроение: оно откроет гражданское строительство и новую городскую экономику.',href:'#research',cta:'Открыть науку',progress:'0 / 1'};
   if(!own.tech.includes('civilEngineering'))return {n:5,total:7,done:4,title:'Открой гражданское строительство',description:'Исследуй новую отрасль, чтобы добывать камень и песок, выпускать цемент и стекло.',href:'#research',cta:'Изучить отрасль',progress:own.research?.key==='civilEngineering'?`Завершение через ${remaining(own.research.end)}`:'0 / 1'};
@@ -59,7 +61,7 @@ const canPay=(cost,items={})=>own.money>=cost&&Object.entries(items).every(([k,v
 const button=(label,type,key='',disabled=false,extra='')=>`<button class="action-btn" data-action="${type}" data-key="${key}" ${disabled?'disabled':''} ${extra}>${label}</button>`;
 function render(){if(!own||Date.now()<holdUntil)return;
  const completed=own.tech.length;
- renderOnboarding();renderEconomy();renderCompletions();
+ renderOnboarding();renderEconomy();renderCompletions();renderExchange(own,send);
  const chapter=own.victory&&own.tech.includes('urbanSystems')?6:own.victory?5:own.tech.includes('orbital')?4:own.tech.includes('engineering')?3:completed?2:1;
  const chapterName=chapter===6?'Город будущего':chapter===5?'Орбитальная империя':chapter===4?'Выход на орбиту':chapter===3?'Технологический рывок':chapter===2?'Диверсификация':'Промышленный старт';
  html('#campaign-summary',`<div><small>ГЛАВА ${chapter} / 6</small><strong>${chapterName}</strong></div><div><b>${completed} / ${Object.keys(RESEARCH).length}</b><span>технологий</span></div><div><b>${num(own.stats.contracts)}</b><span>поставок выполнено</span></div><a href="#goals">Цели и награды ↗</a>`);
@@ -82,12 +84,12 @@ function render(){if(!own||Date.now()<holdUntil)return;
  renderMarket();renderResearch();renderGoals();renderContracts();renderRegion();
 }
 function renderMarket(){
- const event=world.event;$('#market-event').textContent=`${event.name} · ${event.text} Следующая смена через ${remaining(event.endsAt)}.`;
+ const event=world.event;$('#market-event').textContent=`Государственная лавка: резерв для одиночной игры. Покупка у игроков часто выгоднее. Квоты обновляются каждый час.`;
  const selected=$('#trade-amount').value;
  html('#market-list',Object.entries(own.trade).map(([k,price])=>{
- const buyAmount=selected==='max'?Math.min(5000,Math.floor(own.money/price.buy),Math.max(0,own.capacity-own.stock[k])):Number(selected);
- const sellAmount=selected==='max'?Math.min(5000,own.stock[k]):Number(selected);
- return `<div class="trade-row"><div class="trade-resource">${RESOURCES[k].icon} <b>${RESOURCES[k].label}</b><small>На складе: ${num(own.stock[k])}</small></div><div class="trade-buttons">${button(`Купить · ${num(price.buy)} ₽/ед.`,'buy',k,buyAmount<1||buyAmount*price.buy>own.money||buyAmount>own.capacity-own.stock[k])}${button(`Продать · ${num(price.sell)} ₽/ед.`,'sell',k,sellAmount<1||sellAmount>own.stock[k])}</div></div>`;
+ const buyAmount=selected==='max'?Math.min(5000,own.exchange?.prices[k]?.buyLeft??5000,Math.floor(own.money/price.buy),Math.max(0,own.capacity-own.stock[k])):Number(selected);
+ const sellAmount=selected==='max'?Math.min(5000,own.exchange?.prices[k]?.sellLeft??5000,own.stock[k]):Number(selected);
+ return `<div class="trade-row"><div class="trade-resource">${RESOURCES[k].icon} <b>${RESOURCES[k].label}</b><small>На складе: ${num(own.stock[k])}</small></div><div class="trade-buttons">${button(`Купить · ${num(price.buy)} ₽/ед.`,'buy',k,buyAmount>(own.exchange?.prices[k]?.buyLeft??5000)||buyAmount<1||buyAmount*price.buy>own.money||buyAmount>own.capacity-own.stock[k])}${button(`Продать · ${num(price.sell)} ₽/ед.`,'sell',k,sellAmount>(own.exchange?.prices[k]?.sellLeft??5000)||sellAmount<1||sellAmount>own.stock[k])}</div></div>`;
  }).join(''));
  const value=Object.entries(own.trade).reduce((s,[k,v])=>s+own.stock[k]*v.sell,0);$('#market-value').textContent=`СКЛАД: ${num(value)} ₽`;
  const cost=Math.ceil(5000*Math.pow(1.7,own.warehouse));html('#warehouse-controls',`<div class="warehouse-box"><span>Склад ур. ${own.warehouse+1}<small>${num(own.capacity)} ед. каждого ресурса</small></span>${button(`+5 000 мест · ${num(cost)} ₽`,'warehouse','',own.warehouse>=20||own.money<cost)}</div>`);
@@ -110,7 +112,7 @@ function renderContracts(){
 }
 function renderRegion(){
  $('#leader-count').textContent=world.players.length;
- html('#leaderboard',world.players.slice(0,8).map((p,i)=>`<div class="leader-row"><span class="rank">${i+1}</span><span class="leader-name">${esc(p.name)} ${p.id===own.id?'<b class="you-tag">ВЫ</b>':''}${p.victory?' 🛰️':''}</span><span class="leader-score">${num(p.netWorth)} ₽</span></div>`).join(''));
+ html('#leaderboard',world.players.slice(0,8).map((p,i)=>`<div class="leader-row"><span class="rank">${i+1}</span><span class="leader-name">${esc(p.name)} ${p.id===own.publicId?'<b class="you-tag">ВЫ</b>':''}${p.victory?' 🛰️':''}</span><span class="leader-score">${num(p.netWorth)} ₽</span></div>`).join(''));
  html('#activity-list',world.events.slice(0,8).map(e=>`<div class="event-chip" title="${esc(e.text)}"><span class="event-time">${new Date(e.time).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</span>${esc(e.text)}</div>`).join(''));
 }
 document.addEventListener('pointerdown',()=>{holdUntil=Date.now()+350;});
@@ -127,11 +129,11 @@ document.addEventListener('click',e=>{
  if(type==='cancelResearch')return askAction(action,'Отменить исследование?','Вернётся 80% денег и материалов. Текущий прогресс исследования потеряется.');
  if(type==='build'&&own.offers[key].cost>=20000)return askAction(action,'Подтвердить расширение?',`${BUILDINGS[key].name}: ${num(own.offers[key].cost)} ₽ и материалы. Стройка встанет в очередь.`);
  if(type==='research'&&RESEARCH[key].cost>=100000)return askAction(action,'Подтвердить исследование?',`${RESEARCH[key].name}: ${num(RESEARCH[key].cost)} ₽ и материалы. Исследование займёт ${Math.round(RESEARCH[key].seconds/60)} минут.`);
- if(type==='sell'){const count=amount==='max'?Math.min(5000,Math.floor(own.stock[key])):amount;if(count>=1000)return askAction({...action,amount:count},`Продать ${num(count)} ед. ${RESOURCES[key].label}?`,`Цена ${num(own.trade[key].sell)} ₽/ед. · выручка около ${num(count*own.trade[key].sell)} ₽.`);}
+ if(type==='sell'){const count=amount==='max'?Math.min(5000,own.exchange?.prices[key]?.sellLeft??5000,Math.floor(own.stock[key])):amount;if(count>=1000)return askAction({...action,amount:count},`Продать ${num(count)} ед. ${RESOURCES[key].label}?`,`Цена ${num(own.trade[key].sell)} ₽/ед. · выручка около ${num(count*own.trade[key].sell)} ₽.`);}
  send(action);
 });
 for(const dialog of document.querySelectorAll('dialog'))dialog.addEventListener('click',e=>{if(e.target===dialog){dialog.close();pendingAction=null;}});
-window.addEventListener('scroll',()=>requestAnimationFrame(()=>{const sections=['industry','market','contracts','research'].map(id=>document.getElementById(id));let active=sections[0];for(const section of sections){const rect=section.getBoundingClientRect();if(rect.top<innerHeight*.48&&rect.bottom>90)active=section;}for(const link of document.querySelectorAll('.mobile-dock a')){const selected=link.hash===`#${active.id}`;link.classList.toggle('active',selected);if(selected)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');}}),{passive:true});
+window.addEventListener('scroll',()=>requestAnimationFrame(()=>{const sections=['exchange','industry','market','contracts','research'].map(id=>document.getElementById(id));let active=sections[0];for(const section of sections){const rect=section.getBoundingClientRect();if(rect.top<innerHeight*.48&&rect.bottom>90)active=section;}for(const link of document.querySelectorAll('.mobile-dock a')){const selected=link.hash===`#${active.id==='market'?'exchange':active.id}`;link.classList.toggle('active',selected);if(selected)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');}}),{passive:true});
 $('#trade-amount').addEventListener('change',()=>{if(own)renderMarket();});
 $('#chat-form').addEventListener('submit',e=>{e.preventDefault();const input=$('#chat-input');if(input.value.trim()){send({type:'chat',text:input.value.trim()});input.value='';}});
 connect();

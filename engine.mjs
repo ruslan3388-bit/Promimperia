@@ -1,3 +1,6 @@
+import {randomUUID} from 'node:crypto';
+import {initTrader,npcPrices,npcAction} from './exchange.mjs';
+import {sectorBonus} from './public/economy-config.mjs';
 import {BUILDINGS, RESOURCES, RESEARCH, GOALS, MARKET_EVENTS, PROJECT} from './public/catalog.mjs';
 export const CAP = 999999;
 export const OFFLINE_LIMIT = 8*3600;
@@ -24,7 +27,8 @@ export function normalizePlayer(raw,now=Date.now()) {
  p.contracts=Array.isArray(raw.contracts)?raw.contracts.filter(c=>has(RESOURCES,c.resource)&&c.amount>0&&c.reward>0&&c.id).slice(0,3):[];
  while(p.contracts.length<3)p.contracts.push(makeContract(p,p.contracts.length,0));
  p.project=raw.project&&Number.isFinite(raw.project.end)?raw.project:null;p.victory=Boolean(raw.victory);
- p.status={};p.rates={};p.upkeep=0;p.income=0;
+ p.publicId=typeof raw.publicId==='string'&&/^[0-9a-f-]{36}$/.test(raw.publicId)?raw.publicId:randomUUID();
+ initTrader(p);p.status={};p.rates={};p.upkeep=0;p.income=0;
  return p;
 }
 export const capacity=p=>Math.min(CAP,5000*(1+p.warehouse));
@@ -48,7 +52,7 @@ export function market(world,now=Date.now()) {
  return [k,{...r,price:r.price?Math.max(1,Math.round(r.price*swing*(event.boost[k]||1)*(1-impact))):0}];}));
  return {prices,event:{...event,endsAt:(epoch+1)*600000}};
 }
-export function quote(p,world,key,side,now){const price=market(world,now).prices[key]?.price||0;return Math.max(1,side==='buy'?Math.ceil(price*1.2*(p.tech.includes('analytics')?.93:1)):Math.floor(price*(p.tech.includes('analytics')?1.05:1)));}
+export function quote(p,world,key,side,now){return npcPrices(key,p)[side==='buy'?'buy':'sell'];}
 function affordable(p,cost,materials={}){return p.money>=cost&&Object.entries(materials).every(([k,v])=>p.stock[k]>=v);}
 function debit(p,cost,materials={}){p.money-=cost;for(const[k,v]of Object.entries(materials))p.stock[k]-=v;}
 function refund(p,item){p.money+=Math.floor(item.cost*.8);for(const[k,v]of Object.entries(item.materials||{}))p.stock[k]=Math.min(CAP,p.stock[k]+Math.floor(v*.8));}
@@ -65,19 +69,19 @@ export function advance(p,seconds,now=Date.now()) {
  if(p.project&&p.project.end<=now){p.project=null;p.victory=true;notices.push('Орбитальная сеть запущена! Кампания завершена, регион продолжает работать.');}
  updateOnboarding(p);
  if(seconds<=0)return notices;
- const before={...p.stock};p.status={};p.upkeep=0;p.income=0;
+ const before={...p.stock};const workers=Object.entries(p.buildings).reduce((n,[k,c])=>n+(p.paused.includes(k)?0:c),0);const needed=workers*seconds/600;p.fed=needed>0&&p.stock.bread>=needed;if(p.fed)p.stock.bread-=needed;p.foodDemand=workers/600;p.status={};p.upkeep=0;p.income=0;
  const outputBonus=1+(p.tech.includes('efficiency')?.15:0)+(p.tech.includes('automation')?.1:0);
  const order=Object.entries(BUILDINGS).sort(([,a],[,b])=>Number(b.rate.energy>0)-Number(a.rate.energy>0));
  for(const[key,b]of order){
  const count=p.buildings[key];if(!count)continue;
  if(p.paused.includes(key)){p.status[key]={efficiency:0,reason:'На паузе'};continue;}
- const flows=Object.fromEntries(Object.entries(b.rate).map(([k,v])=>[k,v*count*seconds*(v>0?outputBonus*(k==='chips'&&p.tech.includes('electronics')?1.25:1):(k==='energy'&&p.tech.includes('energy')?.8:1))]));
+ const flows=Object.fromEntries(Object.entries(b.rate).map(([k,v])=>[k,v*count*seconds*(v>0?outputBonus*sectorBonus(p,key,b)*(p.fed?1.1:1)*(k==='chips'&&p.tech.includes('electronics')?1.25:1):(k==='energy'&&p.tech.includes('energy')?.8:1))]));
  let scale=1,reason='Работает';const upkeep=b.upkeep*count*seconds;
  for(const[k,v]of Object.entries(flows)){
  const limit=v<0?p.stock[k]/-v:Math.max(0,capacity(p)-p.stock[k])/v;
  if(limit<scale){scale=Math.max(0,limit);reason=v<0?`Не хватает: ${RESOURCES[k].label}`:`Склад заполнен: ${RESOURCES[k].label}`;}
  }
- const income=(b.income||0)*count*seconds,cashBurn=Math.max(0,upkeep-income);
+ const income=(b.income||0)*count*seconds*sectorBonus(p,key,b),cashBurn=Math.max(0,upkeep-income);
  if(cashBurn>0&&p.money/cashBurn<scale){scale=p.money/cashBurn;reason='Нет средств на обслуживание';}
  for(const[k,v]of Object.entries(flows)){p.stock[k]=Math.max(0,p.stock[k]+v*scale);if(v>0)p.stats.produced[k]=finite(p.stats.produced[k])+v*scale;}
  p.money=Math.min(1e15,Math.max(0,p.money+(income-upkeep)*scale));p.upkeep+=upkeep*scale/seconds;p.income+=income*scale/seconds;p.status[key]={efficiency:Math.round(scale*100),reason};
@@ -110,15 +114,7 @@ export function action(p,m,world,now=Date.now()) {
  }
  if(m.type==='cancelResearch'){if(!p.research)return fail('Нет активного исследования');refund(p,p.research);p.research=null;return {ok:true,message:'Исследование отменено; возвращено 80% затрат.'};}
  if(m.type==='warehouse'){const cost=Math.ceil(5000*Math.pow(1.7,p.warehouse));if(p.warehouse>=20)return fail('Склад достиг максимума');if(p.money<cost)return fail('Недостаточно денег');p.money-=cost;p.warehouse++;return {ok:true,message:`Вместимость склада: ${capacity(p)} каждого ресурса`};}
- if(m.type==='buy'||m.type==='sell'){
- if(!has(RESOURCES,key)||key==='science'||!availableResources(p).includes(key))return fail('Ресурс ещё не открыт');
- const unit=quote(p,world,key,m.type,now);const max=m.type==='sell'?Math.floor(p.stock[key]):Math.min(Math.floor(p.money/unit),Math.max(0,Math.floor(capacity(p)-p.stock[key])));
- const amount=m.amount==='max'||m.amount===undefined?Math.min(5000,max):Number(m.amount);
- if(!Number.isSafeInteger(amount)||amount<1||amount>5000)return fail('Размер сделки: от 1 до 5000');if(amount>max)return fail('Не хватает ресурсов, денег или места на складе');
- p.stock[key]+=m.type==='buy'?amount:-amount;p.money+=m.type==='buy'?-amount*unit:amount*unit;
- world.pressure||={};world.pressure[key]=clamp(finite(world.pressure[key])+(m.type==='sell'?1:-1)*amount*.00001,-.15,.15);
- return {ok:true,message:`${m.type==='buy'?'Куплено':'Продано'}: ${amount} ${RESOURCES[key].label} · ${amount*unit} ₽`};
- }
+ if(m.type==='buy'||m.type==='sell')return npcAction(p,m,world,now);
  if(m.type==='readNotifications'){p.notifications=p.notifications.map(n=>({...n,read:true}));return {ok:true,message:'Журнал прочитан'};}
  if(m.type==='fulfill'){
  const index=p.contracts.findIndex(c=>c.id===m.contractId);if(index<0)return fail('Контракт уже недоступен');const c=p.contracts[index];
@@ -134,5 +130,5 @@ export function action(p,m,world,now=Date.now()) {
  }
  return fail('Неизвестное действие');
 }
-export function publicPlayer(p){return {id:p.id,name:p.name,netWorth:Math.floor(p.money+Object.entries(RESOURCES).reduce((s,[k,r])=>s+p.stock[k]*r.price,0)+Object.entries(BUILDINGS).reduce((s,[k,b])=>s+p.buildings[k]*b.cost,0)),online:p.connections>0,victory:p.victory};}
-export function privatePlayer(p,world,now=Date.now()) {return {...p,stock:Object.fromEntries(Object.entries(p.stock).map(([k,v])=>[k,Math.floor(v)])),money:Math.floor(p.money),capacity:capacity(p),offers:Object.fromEntries(Object.keys(BUILDINGS).map(k=>[k,buildOffer(p,k)])),trade:Object.fromEntries(availableResources(p).map(k=>[k,{buy:quote(p,world,k,'buy',now),sell:quote(p,world,k,'sell',now)}])),goals:GOALS.map(g=>({...g,progress:Math.min(g.target,Math.floor(goalProgress(p,g))),claimed:p.claimed.includes(g.id)}))};}
+export function publicPlayer(p){return {id:p.publicId,name:p.name,specialization:p.specialization,netWorth:Math.floor(p.money+Object.entries(RESOURCES).reduce((s,[k,r])=>s+p.stock[k]*r.price,0)+Object.entries(BUILDINGS).reduce((s,[k,b])=>s+p.buildings[k]*b.cost,0)),online:p.connections>0,victory:p.victory};}
+export function privatePlayer(p,world,now=Date.now()) {return {...p,stock:Object.fromEntries(Object.entries(p.stock).map(([k,v])=>[k,Math.floor(v)])),money:Math.floor(p.money),capacity:capacity(p),offers:Object.fromEntries(Object.keys(BUILDINGS).map(k=>[k,buildOffer(p,k)])),trade:Object.fromEntries(Object.keys(RESOURCES).filter(k=>k!=='science').map(k=>[k,{buy:quote(p,world,k,'buy',now),sell:quote(p,world,k,'sell',now)}])),goals:GOALS.map(g=>({...g,progress:Math.min(g.target,Math.floor(goalProgress(p,g))),claimed:p.claimed.includes(g.id)}))};}

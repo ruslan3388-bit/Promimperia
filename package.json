@@ -1,10 +1,10 @@
 {
   "name": "industrial-frontier-miniapp",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test game-rules.test.mjs engine.test.mjs integration.test.mjs",
+    "test": "node --test game-rules.test.mjs engine.test.mjs integration.test.mjs exchange.test.mjs",
     "simulate": "node scripts/simulate-campaign.mjs",
     "start": "node server.mjs",
     "dev": "node --watch server.mjs"
