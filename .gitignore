@@ -1,0 +1,11 @@
+node_modules/
+data/*
+!data/.gitkeep
+backups/
+/scripts/backup-live.mjs
+/scripts/check-live-v3.mjs
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store

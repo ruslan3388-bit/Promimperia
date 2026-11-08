@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#101513">
+  <meta name="description" content="Промышленная стратегия в Telegram: развивай производство, заключай контракты и соревнуйся за лидерство в регионе.">
+  <meta name="color-scheme" content="dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Промышленники — Восточный регион</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app-v2.css"><link rel="stylesheet" href="/game-v3.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Промышленники — на главную">
+        <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 25V13l7 4v-7l7 4V8l10 5v12H4Z"/><path d="M9 21h3m4 0h3m4 0h2M7 26h19"/></svg></span>
+        <span class="brand-copy"><b>ПРОМЫШЛЕННИКИ</b><small>INDUSTRIAL FRONTIER</small></span>
+      </a>
+      <nav class="primary-nav" aria-label="Навигация">
+        <a href="#industry">Империя</a><a href="#market">Рынок</a><a href="#research">Наука</a><a href="#contracts">Контракты</a><a href="#region">Регион</a>
+      </nav>
+      <div class="top-right">
+        <span class="world-status"><i></i><span id="online-count">В сети…</span></span>
+        <button class="avatar" id="player-avatar" title="Профиль компании" aria-label="Открыть профиль компании">И</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> ВОСТОЧНЫЙ ПРОМЫШЛЕННЫЙ КЛАСТЕР</div>
+          <h1>Создай<br>свою <em>индустрию.</em></h1>
+          <p>От первой шахты до высокотехнологичной империи. Управляй цепочками, заключай сделки, опережай регион.</p>
+          <div class="hero-meta"><span class="live-dot"></span> <span id="connection-label">Подключаемся к отрасли…</span></div>
+          <div class="hero-facts"><span><small>СЕКТОР</small><b>01 / ВОСТОЧНЫЙ</b></span><i></i><span><small>ЭКОНОМИКА</small><b>ОБЩИЙ РЫНОК</b></span></div>
+        </div>
+        <div class="hero-art" role="img" aria-label="Промышленный кластер на фоне гор и железной дороги">
+          <div class="hero-art-shade"></div>
+          <div class="hero-art-top"><span class="region-live"><i></i> РЕГИОН ONLINE</span><span class="sector-code">СЕКТОР 01</span></div>
+          <div class="hero-art-caption"><small>ВОСТОЧНЫЙ КЛАСТЕР</small><b>НОВАЯ ЭРА<br>НАЧИНАЕТСЯ ЗДЕСЬ</b></div>
+          <div class="hero-art-coordinate">54° 59' N<br>82° 54' E</div>
+          <span class="art-crosshair art-crosshair-a"></span><span class="art-crosshair art-crosshair-b"></span>
+        </div>
+      </section>
+
+      <section class="next-step-panel" id="next-step" aria-live="polite"></section>
+      <section class="campaign-strip" id="campaign-summary"></section><section class="metrics" id="metrics" aria-label="Ресурсы компании"></section>
+      <section class="economy-panel" aria-label="История экономики"><div class="economy-heading"><div><span class="panel-index">ПОСЛЕДНИЕ 10 МИНУТ</span><h3>Темп экономики</h3></div><span id="economy-updated">История с момента открытия</span></div><div id="economy-history" class="economy-history"></div></section>
+
+      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> ОПЕРАЦИОННЫЙ ЦЕНТР</div><h2>Управление империей</h2></div><div class="production-legend"><span class="live-dot"></span> СИНХРОНИЗАЦИЯ В РЕАЛЬНОМ ВРЕМЕНИ</div></div>
+
+      <section class="main-grid">
+        <div class="industry-panel" id="industry">
+          <div class="panel-top"><div><span class="panel-index">01 / ПРЕДПРИЯТИЯ</span><h3>Производство</h3></div><span class="panel-count" id="factory-count">0 объектов</span></div>
+          <div class="sector-tabs" id="sector-tabs"></div><div id="chain-guide" class="chain-guide"></div><div id="construction-queue" class="queue-list"></div><div class="buildings" id="buildings"></div>
+          <div class="supply-note" id="supply-advisor" role="status" aria-live="polite"><span class="note-icon" id="supply-icon">↗</span><span><b id="supply-title">Цепочка поставок</b><br><span id="supply-message">Предприятия работают автоматически. Следи за запасами сырья и энергии.</span></span></div>
+        </div>
+        <aside class="side-column">
+          <div class="market-panel" id="market">
+            <div class="panel-top"><div><span class="panel-index">02 / РЫНОК</span><h3>Сбыт продукции</h3></div><span class="market-icon">↗</span></div>
+            <p class="market-copy">Биржевые цены региона и быстрая оценка товарного склада.</p>
+            <div id="market-event" class="chain-guide"></div><label class="trade-toolbar">Размер партии <select id="trade-amount"><option value="10">10 ед.</option><option value="100">100 ед.</option><option value="1000">1 000 ед.</option><option value="max">Максимум (до 5 000)</option></select></label><div id="market-list" class="market-list"></div><div id="warehouse-controls"></div>
+            <div class="market-footer"><span id="market-value">ОЦЕНКА СКЛАДА: — ₽</span><span>₽ / ЕД.</span></div>
+          </div>
+          <div class="leaderboard-panel">
+            <div class="panel-top"><div><span class="panel-index">03 / ОТРАСЛЬ</span><h3>Лидеры региона</h3></div><span class="leader-count" id="leader-count">0</span></div>
+            <div id="leaderboard" class="leaderboard"></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="expansion-panel" id="research"><div class="panel-top"><div><span class="panel-index">РАЗВИТИЕ / ТЕХНОЛОГИИ</span><h3>Исследовательская программа</h3></div><span id="research-count"></span></div><p class="panel-help">Одна технология за раз. Науку производят исследовательские центры; контракты и цели дают дополнительные очки.</p><div id="research-queue"></div><div id="research-list" class="research-grid"></div></section>
+<section class="expansion-panel" id="goals"><div class="panel-top"><div><span class="panel-index">КАМПАНИЯ / ЭТАПЫ</span><h3>Путь к орбитальной империи</h3></div></div><div id="goals-list" class="goal-grid"></div><div id="megaproject"></div></section>
+<section class="expansion-panel completion-panel" id="completion-history"><div class="panel-top"><div><span class="panel-index">ИСТОРИЯ / ЗАВЕРШЕНИЯ</span><h3>Журнал событий</h3></div><span id="completion-count" class="level-pill">0 новых</span></div><div id="completion-list" class="completion-list"></div><button class="action-btn" id="read-completions" data-action="readNotifications" hidden>Отметить прочитанным</button></section>
+<details class="expansion-panel game-help"><summary>Как развивается экономика</summary><p>Начни с сырья и энергетики. Изучи логистику и построй научный центр. Агропром даёт быстрый оборот, нефтехимия открывает материалы для машин, робототехника ведёт к спутникам.</p><p>Продажа склада приносит деньги; обслуживание заводов их расходует. При нехватке сырья можно купить партию на рынке или приостановить потребляющую цепочку. Полный склад останавливает соответствующее производство.</p><p>Строительная очередь: три объекта последовательно. Исследования идут отдельно. При отмене последней стройки или исследования возвращается 80% затрат. Рынок меняет условия каждые 10 минут; закупочная цена выше продажной.</p><p>Прогресс сохраняется автоматически. После выхода производство работает до 8 часов; после отключения сервера этот период рассчитывается при запуске. Контракты обновляются после сдачи. Финальная цель — развернуть собственную орбитальную сеть, затем можно продолжать расширение.</p></details><section class="contracts-panel" id="contracts">
+        <div class="panel-top"><div><span class="panel-index">04 / ДОГОВОРЫ</span><h3>Контракты отрасли</h3></div><span class="contract-summary" id="contract-summary">3 активных заказа</span></div>
+        <p class="contract-intro">Поставляй сырьё и продукцию напрямую заказчикам — так прибыль выше биржевой.</p>
+        <div id="contracts-list" class="contracts-list"></div>
+      </section>
+
+      <section class="activity-panel" id="region">
+        <div class="panel-top"><div><span class="panel-index">05 / ПУЛЬС РЕГИОНА</span><h3>Журнал отрасли</h3></div><span class="activity-live"><i></i> LIVE</span></div>
+        <div class="activity-content"><div id="activity-list" class="activity-list"></div><form id="chat-form" class="chat-form"><span class="chat-icon">↳</span><input id="chat-input" maxlength="160" placeholder="Сообщение игрокам…" autocomplete="off" aria-label="Сообщение игрокам"><button type="submit" aria-label="Отправить сообщение">↗</button></form></div>
+      </section>
+    </main>
+    <footer><span>© 2026 ПРОМЫШЛЕННИКИ</span><span>ВОСТОЧНЫЙ ПРОМЫШЛЕННЫЙ КЛАСТЕР · 01</span><span class="footer-status"><i></i> <span id="footer-status">СИНХРОНИЗАЦИЯ</span></span></footer>
+    <nav class="mobile-dock" aria-label="Быстрая навигация"><a href="#industry"><span>⌂</span>Империя</a><a href="#market"><span>↗</span>Рынок</a><a href="#contracts"><span>▤</span>Заказы</a><a href="#research"><span>🔬</span>Наука</a></nav>
+  </div>
+  <dialog id="profile-dialog" class="profile-dialog"><button class="dialog-close" data-dialog-close aria-label="Закрыть профиль">×</button><span class="panel-index">УПРАВЛЕНИЕ КОМПАНИЕЙ</span><h2 id="profile-name"></h2><div id="profile-details" class="profile-details"></div><div class="profile-dialog-actions"><button class="action-btn" id="copy-player-id">Скопировать ID</button><button class="action-btn" data-dialog-close>Готово</button></div></dialog>
+  <dialog id="confirm-dialog" class="confirm-dialog"><button class="dialog-close" data-dialog-close aria-label="Отмена">×</button><span class="panel-index">ПРОВЕРЬ ОПЕРАЦИЮ</span><h2 id="confirm-title">Подтверди действие</h2><p id="confirm-details"></p><div class="profile-dialog-actions"><button class="action-btn" data-dialog-close>Отмена</button><button class="action-btn confirm-accept" id="confirm-accept">Подтвердить</button></div></dialog>
+  <div class="toast" id="toast" role="status"></div>
+  <script type="module" src="/app-v3.js"></script>
+</body>
+</html>
