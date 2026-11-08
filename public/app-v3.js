@@ -35,7 +35,7 @@ function renderCompletions(){const items=own.notifications||[],unread=items.filt
 function openProfile(){if(!own)return;$('#profile-name').textContent=`Компания «${own.name}»`;const playerId=own.id.startsWith('tg-')?own.id.slice(3):own.id;html('#profile-details',`<div><span>Идентификатор</span><b>${esc(playerId)}</b></div><div><span>Основана</span><b>${new Date(own.createdAt).toLocaleDateString('ru-RU',{year:'numeric',month:'long',day:'numeric'})}</b></div><div><span>Объектов</span><b>${num(Object.values(own.buildings).reduce((a,b)=>a+b,0))}</b></div><div><span>Контрактов выполнено</span><b>${num(own.stats.contracts)}</b></div><div><span>Сохранение</span><b>${world.storage?.ok?'Синхронизировано':'Проверить соединение'}</b></div>`);$('#copy-player-id').dataset.copy=playerId;$('#profile-dialog').showModal();}
 function askAction(action,title,details){pendingAction=action;$('#confirm-title').textContent=title;$('#confirm-details').textContent=details;$('#confirm-dialog').showModal();}
 function connect(){
- clearTimeout(timer);socket=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}`);
+ clearTimeout(timer);const endpoint=new URL('.',import.meta.url);endpoint.protocol=location.protocol==='https:'?'wss:':'ws:';socket=new WebSocket(endpoint.href);
  socket.onopen=()=>{let id=localStorage.getItem('industrial-frontier-id');if(!id){id=crypto.randomUUID();localStorage.setItem('industrial-frontier-id',id);}socket.send(JSON.stringify({type:'auth',initData:tg?.initData||'',devId:id,name:'Инженер'}));};
  socket.onmessage=e=>{let m;try{m=JSON.parse(e.data);}catch{return;}
  if(m.type==='ready'||m.type==='world'){

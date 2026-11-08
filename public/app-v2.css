@@ -99,7 +99,7 @@ main { padding: 30px 0 42px; }
   isolation: isolate;
   border: 1px solid #395248;
   border-radius: 23px;
-  background: #1a2822 url('/industrial-frontier-hero-v2.png') center 52% / cover no-repeat;
+  background: #1a2822 url('industrial-frontier-hero-v2.png') center 52% / cover no-repeat;
   box-shadow: 0 28px 65px #0008, inset 0 0 0 1px #d0f5b00a;
 }
 .hero-art::before, .hero-art::after { position: absolute; z-index: -1; inset: 0; content: ''; pointer-events: none; }

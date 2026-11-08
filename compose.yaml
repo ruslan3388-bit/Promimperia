@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    image: promimperia:latest
+    container_name: promimperia
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3000"
+      GAME_HOST: 0.0.0.0
+      GAME_DATA_FILE: /data/world.json
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:3138:3000"
