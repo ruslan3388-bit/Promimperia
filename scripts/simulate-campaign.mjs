@@ -1,8 +1,8 @@
 import {createPlayer,advance,action,buildOffer,availableResources,quote} from '../engine.mjs';
 import {BUILDINGS,RESEARCH,RESOURCES,PROJECT,GOALS} from '../public/catalog.mjs';
 const start=1800000000000,p=createPlayer({id:'simulation',name:'Simulation'},start),world={};
-const order=['logistics','agronomy','chemistry','energy','engineering','efficiency','electronics','analytics','automation','orbital','frontier'];
-const target={power:10,mine:4,smelter:4,lab:4,coalMine:3,thermal:4,university:5,farm:2,sawmill:2,foodPlant:2,oilWell:3,refinery:3,alloyPlant:3,machinePlant:3,solar:2,robotics:3,spaceport:2};
+const order=['logistics','agronomy','chemistry','energy','engineering','efficiency','electronics','analytics','automation','orbital','frontier','civilEngineering','urbanSystems'];
+const target={power:10,mine:4,smelter:4,lab:4,coalMine:3,thermal:4,university:5,farm:2,sawmill:2,foodPlant:2,oilWell:3,refinery:3,alloyPlant:3,machinePlant:3,solar:2,robotics:3,spaceport:2,quarry:3,cementWorks:2,glassworks:2,materialsPlant:2,residential:5};
 const log=[];
 function acquire(materials,budget,t){
  if(p.money<budget)return;
@@ -14,7 +14,7 @@ for(let sec=5;sec<=24*3600;sec+=5){
  if(p.victory){finish=sec;break;}
  if(sec%30)continue;
  const next=order.find(k=>!p.tech.includes(k)&&p.research?.key!==k);
- const reserve={ore:60,energy:150,steel:120,chips:70,coal:150,timber:100,grain:150,food:100,oil:150,plastic:150,alloy:150,machinery:70,robots:70,satellites:10};
+ const reserve={ore:60,energy:150,steel:120,chips:70,coal:150,timber:100,grain:150,food:100,oil:150,plastic:150,alloy:150,machinery:70,robots:70,satellites:10,stone:100,sand:100,cement:100,glass:50,buildingMaterials:50,boards:80,clothing:40};
  if(next)for(const[k,v]of Object.entries(RESEARCH[next].materials))reserve[k]=Math.max(reserve[k]||0,v);
  if(p.tech.includes('frontier'))for(const[k,v]of Object.entries(PROJECT.materials))reserve[k]=Math.max(reserve[k]||0,v);
  for(const k of availableResources(p)){const excess=Math.min(5000,Math.floor(p.stock[k]-(reserve[k]||0)));if(excess>0)action(p,{type:'sell',key:k,amount:excess},world,t);}
@@ -28,7 +28,7 @@ for(let sec=5;sec<=24*3600;sec+=5){
    if(saturated!==p.paused.includes(key))action(p,{type:'pause',key},world,t);
   }
  }
- const buildOrder=['power','mine','smelter','lab','university','coalMine','thermal','farm','sawmill','foodPlant','oilWell','refinery','alloyPlant','machinePlant','solar','robotics','spaceport'];
+ const buildOrder=['power','mine','smelter','lab','university','coalMine','thermal','farm','sawmill','foodPlant','oilWell','refinery','alloyPlant','machinePlant','solar','robotics','spaceport','quarry','cementWorks','glassworks','materialsPlant','residential'];
  for(const key of buildOrder){if(p.queue.length>=3)break;const count=p.buildings[key]+p.queue.filter(q=>q.key===key).length;if(count>=target[key])continue;const offer=buildOffer(p,key);if(!offer.unlocked)continue;
  if(next&&!p.research&&p.money<RESEARCH[next].cost+offer.cost&&p.buildings.university>=2&&p.buildings[key]>=1)continue;
  acquire(offer.materials,offer.cost,t);action(p,{type:'build',key},world,t);
