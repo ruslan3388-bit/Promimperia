@@ -21,7 +21,13 @@ for(let sec=5;sec<=24*3600;sec+=5){
  for(const g of GOALS)action(p,{type:'claim',key:g.id},world,t);
  for(const c of [...p.contracts])if(p.stock[c.resource]-c.amount>(reserve[c.resource]||0))action(p,{type:'fulfill',contractId:c.id},world,t);
  if(!p.research&&next){const r=RESEARCH[next];if(r.requires.every(k=>p.tech.includes(k))){acquire(r.materials,r.cost,t);if(action(p,{type:'research',key:next},world,t).ok)log.push({minute:sec/60,research:next});}}
- if(p.tech.includes('frontier')){acquire(PROJECT.materials,PROJECT.cost,t);action(p,{type:'project'},world,t);}
+ if(p.tech.includes('frontier')){acquire(PROJECT.materials,PROJECT.cost,t);action(p,{type:'project'},world,t);
+  if(!p.project)for(const key of['spaceport','robotics','machinePlant','alloyPlant']){
+   const need={satellites:PROJECT.materials.satellites+20,robots:PROJECT.materials.robots+200,alloy:PROJECT.materials.alloy+500};
+   const saturated=Object.entries(BUILDINGS[key].rate).filter(([,v])=>v>0).every(([k])=>p.stock[k]>=(need[k]||300));
+   if(saturated!==p.paused.includes(key))action(p,{type:'pause',key},world,t);
+  }
+ }
  const buildOrder=['power','mine','smelter','lab','university','coalMine','thermal','farm','sawmill','foodPlant','oilWell','refinery','alloyPlant','machinePlant','solar','robotics','spaceport'];
  for(const key of buildOrder){if(p.queue.length>=3)break;const count=p.buildings[key]+p.queue.filter(q=>q.key===key).length;if(count>=target[key])continue;const offer=buildOffer(p,key);if(!offer.unlocked)continue;
  if(next&&!p.research&&p.money<RESEARCH[next].cost+offer.cost&&p.buildings.university>=2&&p.buildings[key]>=1)continue;
