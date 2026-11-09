@@ -58,7 +58,23 @@ export function npcAction(p,m,w,now=Date.now()){
  const quota=Math.max(10,Math.floor(60000/Math.max(1,RESOURCES[key].price))),used=(buy?p.npcQuota.bought:p.npcQuota.sold);
  const max=Math.min(quota-(used[key]||0),buy?Math.min(Math.floor(p.money/unit),Math.floor(5000*(1+p.warehouse)-p.stock[key])):Math.floor(p.stock[key]),5000);
  const amount=m.amount==='max'||m.amount===undefined?max:Number(m.amount);
- if(!int(amount,1,5000)||amount>max)return fail('Не хватает денег, товара, места или суточной квоты лавки');
+ if(!int(amount,1,5000)){
+  if((m.amount==='max'||m.amount===undefined)&&amount<1){
+   if(quota-(used[key]||0)<1)return fail('Квота лавки на этот час исчерпана. Повтори после смены часа.');
+   if(buy&&Math.floor(p.money/unit)<1)return fail('Недостаточно денег для покупки в лавке.');
+   if(buy&&Math.floor(5000*(1+p.warehouse)-p.stock[key])<1)return fail('Недостаточно места на складе для покупки.');
+   if(!buy&&Math.floor(p.stock[key])<1)return fail('Недостаточно товара на складе.');
+  }
+  return fail('Количество: от 1 до 5 000 ед.');
+ }
+ if(buy){
+  if(amount>quota-(used[key]||0))return fail('Квота лавки на этот час исчерпана. Повтори после смены часа.');
+  if(amount>Math.floor(p.money/unit))return fail('Недостаточно денег для покупки в лавке.');
+  if(amount>Math.floor(5000*(1+p.warehouse)-p.stock[key]))return fail('Недостаточно места на складе для покупки.');
+ }else{
+  if(amount>quota-(used[key]||0))return fail('Квота лавки на этот час исчерпана. Повтори после смены часа.');
+  if(amount>Math.floor(p.stock[key]))return fail('Недостаточно товара на складе.');
+ }
  p.stock[key]+=buy?amount:-amount;p.money+=buy?-amount*unit:amount*unit;used[key]=(used[key]||0)+amount;
  if(buy)e.npcRemoved+=amount*unit;else e.npcIssued+=amount*unit;
  return ok(`${buy?'Куплено в лавке':'Сдано в лавку'}: ${amount} ${RESOURCES[key].label} · ${amount*unit} ₽`);

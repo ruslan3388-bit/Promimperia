@@ -42,6 +42,7 @@ button[hidden]{display:none!important}.campaign-strip a{display:inline-flex;alig
 .market-item-bottom{margin-top:9px;padding-top:8px;border-top:1px solid #29392e;color:#99aa9b;font-size:10px}
 .market-item-bottom>span b{color:#c6e99b;font:11px var(--mono)}
 .market-item-bottom small{color:#748878}
+.market-action-note{display:block;margin-top:8px;color:#f0bf75;font-size:10px;line-height:1.4}
 .market-item-bottom>div{display:flex;gap:5px;flex:0 0 auto}
 .action-btn.compact{min-height:32px;padding:6px 9px;font-size:10px}
 .action-btn.quiet{border-color:#3c5144;background:#1c2a21;color:#bdcbb8}

@@ -51,6 +51,12 @@ function renderShell(root,p){
   }
  });
 }
+export function npcSellBlockReason(stock,q,amount){
+ if(stock<1)return 'На складе нет товара для сдачи.';
+ if(q.sellLeft<1)return 'Квота лавки на этот час исчерпана. Повтори после смены часа.';
+ if(amount!==undefined&&amount>q.sellLeft)return `За этот час можно сдать не более ${num(q.sellLeft)} ед.`;
+ return null;
+}
 function maxDealAmount(p,q,mode,side,stock,price){
  if(mode==='npc')return side==='sell'?Math.max(0,Math.min(5000,stock,q.sellLeft)):Math.max(0,Math.min(5000,q.buyLeft,Math.floor(p.money/Math.max(1,q.buy)),Math.floor(5000*(1+(p.warehouse||0))-stock)));
  return side==='sell'?Math.max(0,Math.min(5000,stock)):Math.max(0,Math.min(5000,Math.floor(p.money/Math.max(1,price))));
@@ -67,8 +73,8 @@ function renderMarket(root,p,e){
  const categories='<div class="exchange-categories">'+CATEGORIES.map(c=>'<button class="'+(c.key===category?'selected':'')+'" data-category="'+c.key+'">'+c.label+'<small>'+c.items.length+'</small></button>').join('')+'</div>';
  html(root.querySelector('#exchange-content'),categories+'<div class="market-category-title"><b>'+cat.label+'</b><span>'+cat.items.length+' товаров · выбери действие</span></div><div id="market-resources"></div><div id="deal-panel"></div><details class="market-extra"><summary>Потребности региона и статистика</summary><div id="exchange-demand"></div><p class="panel-help" id="exchange-stats"></p></details>');
  const rows=cat.items.map(k=>{
-  const r=RESOURCES[k],q=e.prices[k],stock=p.stock[k]||0,bid=q.bid===null?'—':num(q.bid)+' ₽',ask=q.ask===null?'—':num(q.ask)+' ₽',pct=p.tech?.includes('analytics')?63:60;
-  return '<article class="market-item '+(dealOpen&&selected===k?'active':'')+'"><div class="market-item-top"><span class="market-item-name">'+r.icon+' '+esc(r.label)+'</span><span class="market-stock">Склад <b>'+num(stock)+'</b></span></div><div class="market-item-prices"><span>Цены: покупают <b>'+bid+'</b> · продают <b>'+ask+'</b></span></div><div class="market-item-volume"><span>В заявках: спрос <b>'+num(q.demand)+'</b> · предложение <b>'+num(q.supply)+'</b></span></div><div class="market-item-bottom"><span>Лавка выкупит <b>'+num(q.sell)+' ₽</b> <small>('+pct+'%)</small></span><div><button class="action-btn compact" data-select="'+k+'">Заявка</button><button class="action-btn compact quiet" data-npc-sell="'+k+'" '+(stock<1||q.sellLeft<1?'disabled':'')+'>Сдать</button></div></div></article>';
+  const r=RESOURCES[k],q=e.prices[k],stock=p.stock[k]||0,bid=q.bid===null?'—':num(q.bid)+' ₽',ask=q.ask===null?'—':num(q.ask)+' ₽',pct=p.tech?.includes('analytics')?63:60,blocked=npcSellBlockReason(stock,q);
+  return '<article class="market-item '+(dealOpen&&selected===k?'active':'')+'"><div class="market-item-top"><span class="market-item-name">'+r.icon+' '+esc(r.label)+'</span><span class="market-stock">Склад <b>'+num(stock)+'</b></span></div><div class="market-item-prices"><span>Цены: покупают <b>'+bid+'</b> · продают <b>'+ask+'</b></span></div><div class="market-item-volume"><span>В заявках: спрос <b>'+num(q.demand)+'</b> · предложение <b>'+num(q.supply)+'</b></span></div><div class="market-item-bottom"><span>Лавка выкупит <b>'+num(q.sell)+' ₽</b> <small>('+pct+'%)</small></span><div><button class="action-btn compact" data-select="'+k+'">Заявка</button><button class="action-btn compact quiet" data-npc-sell="'+k+'" '+(blocked?'disabled title="'+esc(blocked)+'" aria-label="Сдать: '+esc(blocked)+'"':'')+'>Сдать</button></div></div>'+(blocked?'<small class="market-action-note">'+esc(blocked)+'</small>':'')+'</article>';
  }).join('');
  html(root.querySelector('#market-resources'),rows);
  const demand=Object.entries(e.prices).filter(([,q])=>q.demand>0||q.supply>0).sort((a,b)=>b[1].demand-a[1].demand).slice(0,10).map(([k,q])=>'<div class="exchange-row"><span>'+RESOURCES[k].icon+' '+RESOURCES[k].label+'<small>Покупают '+num(q.demand)+' · продают '+num(q.supply)+'</small></span><b>'+(q.bid===null?'—':num(q.bid))+' / '+(q.ask===null?'—':num(q.ask))+' ₽</b></div>').join('')||'<p class="panel-help">Заявок пока нет. Размести ордер, чтобы показать свой спрос.</p>';

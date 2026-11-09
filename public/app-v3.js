@@ -1,4 +1,4 @@
-import {renderExchange} from './exchange-ui.mjs';
+import {renderExchange,npcSellBlockReason} from './exchange-ui.mjs';
 import {BUILDINGS,RESOURCES,SECTORS,RESEARCH,PROJECT} from './catalog.mjs';
 import {primarySector,SPECIALIZATIONS,buildingSpecialization,specializationAllowsBuilding,specializationAllowsResearch,researchSpecialization} from './economy-config.mjs';
 const $=s=>document.querySelector(s),fmt=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
@@ -93,7 +93,8 @@ function renderMarket(){
  html('#market-list',Object.entries(own.trade).map(([k,price])=>{
  const buyAmount=selected==='max'?Math.min(5000,own.exchange?.prices[k]?.buyLeft??5000,Math.floor(own.money/price.buy),Math.max(0,own.capacity-own.stock[k])):Number(selected);
  const sellAmount=selected==='max'?Math.min(5000,own.exchange?.prices[k]?.sellLeft??5000,own.stock[k]):Number(selected);
- return `<div class="trade-row"><div class="trade-resource">${RESOURCES[k].icon} <b>${RESOURCES[k].label}</b><small>На складе: ${num(own.stock[k])}</small></div><div class="trade-buttons">${button(`Купить · ${num(price.buy)} ₽/ед.`,'buy',k,buyAmount>(own.exchange?.prices[k]?.buyLeft??5000)||buyAmount<1||buyAmount*price.buy>own.money||buyAmount>own.capacity-own.stock[k])}${button(`Продать · ${num(price.sell)} ₽/ед.`,'sell',k,sellAmount>(own.exchange?.prices[k]?.sellLeft??5000)||sellAmount<1||sellAmount>own.stock[k])}</div></div>`;
+ const blocked=npcSellBlockReason(own.stock[k],own.exchange?.prices[k]||{sellLeft:0},sellAmount);
+ return `<div class="trade-row"><div class="trade-resource">${RESOURCES[k].icon} <b>${RESOURCES[k].label}</b><small>На складе: ${num(own.stock[k])}</small></div><div class="trade-buttons">${button(`Купить · ${num(price.buy)} ₽/ед.`,'buy',k,buyAmount>(own.exchange?.prices[k]?.buyLeft??5000)||buyAmount<1||buyAmount*price.buy>own.money||buyAmount>own.capacity-own.stock[k])}${button(`Продать · ${num(price.sell)} ₽/ед.`,'sell',k,sellAmount>(own.exchange?.prices[k]?.sellLeft??5000)||sellAmount<1||sellAmount>own.stock[k],blocked?`title="${esc(blocked)}" aria-label="Продать: ${esc(blocked)}"`:'')}</div>${blocked?`<small class="market-action-note">${esc(blocked)}</small>`:''}</div>`;
  }).join(''));
  const value=Object.entries(own.trade).reduce((s,[k,v])=>s+own.stock[k]*v.sell,0);$('#market-value').textContent=`СКЛАД: ${num(value)} ₽`;
  const cost=Math.ceil(5000*Math.pow(1.7,own.warehouse));html('#warehouse-controls',`<div class="warehouse-box"><span>Склад ур. ${own.warehouse+1}<small>${num(own.capacity)} ед. каждого ресурса</small></span>${button(`+5 000 мест · ${num(cost)} ₽`,'warehouse','',own.warehouse>=20||own.money<cost)}</div>`);
