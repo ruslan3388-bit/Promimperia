@@ -49,7 +49,7 @@ export function exchangeAction(p,m,w,players,now=Date.now()){
  const o={id:randomUUID(),owner:p.id,name:p.name,key,side,price,amount,remaining:amount,created:now,expires:now+MARKET_RULES.orderHours*3600000,status:'active'};
  e.orders.push(o);match(w,players,o,now);return ok(o.status==='filled'?'Сделка завершена. Товар — в разделе «Получение».':'Заявка размещена на 72 часа. Резерв удерживается до сделки или отмены.');
 }
-export function npcPrices(key,p={}){const base=RESOURCES[key].price;return {buy:Math.ceil(base*1.3*(p.tech?.includes('analytics')?.93:1)),sell:Math.max(1,Math.floor(base*.85*(p.tech?.includes('analytics')?1.05:1)))};}
+export function npcPrices(key,p={}){const base=RESOURCES[key].price;return {buy:Math.ceil(base*1.3*(p.tech?.includes('analytics')?.93:1)),sell:Math.max(1,Math.floor(base*.6*(p.tech?.includes('analytics')?1.05:1)))};}
 export function npcAction(p,m,w,now=Date.now()){
  initTrader(p);const e=initExchange(w),key=m.key;if(!tradable(key))return fail('Ресурс недоступен');
  const day=new Date(now).toISOString().slice(0,13);if(p.npcQuota.day!==day)p.npcQuota={day,bought:{},sold:{}};

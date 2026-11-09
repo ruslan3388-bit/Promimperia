@@ -14,3 +14,56 @@ button[hidden]{display:none!important}.campaign-strip a{display:inline-flex;alig
 
 .exchange-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.exchange-tabs button{padding:12px;border:1px solid #526c50;border-radius:9px;background:#17241d;color:#dce8ce;cursor:pointer}.exchange-tabs button.selected{background:#bfe97f;color:#172312}.exchange-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #304235;font-size:13px}.exchange-row small{display:block;color:#9aaa9d;margin-top:5px}.order-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}.order-form label{display:grid;gap:6px;font-size:12px}.order-form input,.order-form select,#career select{min-width:0;width:100%;padding:12px;background:#14231b;color:#e4eeda;border:1px solid #526c50;border-radius:8px}.order-form button{grid-column:1/-1}#career .trade-toolbar{flex-wrap:wrap}#career select{max-width:240px}@media(max-width:600px){.exchange-row{flex-wrap:wrap}.order-form{grid-template-columns:1fr}.order-form label{font-size:13px}.step-track{flex-wrap:wrap}.step-track span{flex-basis:100%}}
 .other-branches{margin-left:auto;position:relative}.other-branches summary,.locked-tech summary{cursor:pointer;list-style:none;border:1px solid #3c5144;border-radius:8px;padding:10px 12px;background:#17241d;color:#b4c7b0;font-size:11px}.other-branches summary::-webkit-details-marker,.locked-tech summary::-webkit-details-marker{display:none}.other-branches[open]{flex-basis:100%}.other-branches>div{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}.branch-teaser{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:9px 11px;border:1px dashed #34463a;border-radius:9px;background:#141d18;color:#9bad9c;opacity:.78;font-size:11px}.branch-teaser small{font-size:10px;color:#809184;text-align:right}.locked-tech{grid-column:1/-1;display:grid;gap:6px;margin-top:4px}.locked-tech .branch-teaser{min-height:0}
+
+/* Compact, category-based exchange */
+.exchange-role{padding:7px 10px;border:1px solid #425a43;border-radius:999px;background:#1b2a20;color:#c2e89a;font-size:11px;white-space:nowrap}
+.exchange-career{margin:10px 0;border:1px solid #2d4033;border-radius:10px;background:#131d17}
+.exchange-career>summary,.market-extra>summary{padding:11px 13px;color:#b9c9b5;cursor:pointer;font-size:12px;list-style:none}
+.exchange-career>summary::-webkit-details-marker,.market-extra>summary::-webkit-details-marker{display:none}
+.exchange-career[open]{padding:0 12px 10px}
+.exchange-career .trade-toolbar{justify-content:flex-start;flex-wrap:wrap}
+.exchange-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:12px 0}
+.exchange-tabs button{min-width:0;padding:9px 4px;font-size:11px}
+.exchange-categories{display:flex;gap:6px;overflow-x:auto;padding:2px 1px 8px;scrollbar-width:thin}
+.exchange-categories button{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:9px 11px;border:1px solid #34483a;border-radius:9px;background:#151f19;color:#a9b8a8;white-space:nowrap;font-size:11px;cursor:pointer}
+.exchange-categories button.selected{border-color:#829d5d;background:#253423;color:#e4f2d6}
+.exchange-categories small{display:grid;place-items:center;min-width:18px;height:18px;border-radius:10px;background:#26362a;color:#b7d78f;font:10px var(--mono)}
+.market-category-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:5px 1px 8px;color:#e3eddf;font-size:13px}
+.market-category-title span{color:#829286;font-size:10px}
+#market-resources{display:grid;gap:7px}
+.market-item{min-width:0;padding:11px 12px;border:1px solid #2b3b30;border-radius:11px;background:linear-gradient(110deg,#17221b,#131b17)}
+.market-item.active{border-color:#789255;box-shadow:inset 3px 0 #bde878}
+.market-item-top,.market-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.market-item-name{min-width:0;color:#edf3e9;font-size:13px;font-weight:700}
+.market-stock{flex:0 0 auto;color:#89998b;font-size:10px}.market-stock b{color:#d8e5d2;font:11px var(--mono)}
+.market-item-prices,.market-item-volume{margin-top:6px;color:#91a092;font-size:10px;line-height:1.45}
+.market-item-prices b{color:#d9e5d5;font:10px var(--mono)}
+.market-item-volume{color:#7f8f82}
+.market-item-bottom{margin-top:9px;padding-top:8px;border-top:1px solid #29392e;color:#99aa9b;font-size:10px}
+.market-item-bottom>span b{color:#c6e99b;font:11px var(--mono)}
+.market-item-bottom small{color:#748878}
+.market-item-bottom>div{display:flex;gap:5px;flex:0 0 auto}
+.action-btn.compact{min-height:32px;padding:6px 9px;font-size:10px}
+.action-btn.quiet{border-color:#3c5144;background:#1c2a21;color:#bdcbb8}
+.action-btn:disabled{opacity:.42;cursor:not-allowed}
+.market-extra{margin-top:12px;border:1px solid #293a2f;border-radius:10px;background:#131c17}
+.exchange-deal{margin-top:10px;padding:13px;border:1px solid #617a4a;border-radius:12px;background:#1a281e}
+.exchange-deal-title{display:flex;justify-content:space-between;gap:10px;color:#eef4e9;font-size:14px}
+.exchange-deal-title small{display:block;margin-top:5px;color:#93a393;font-size:10px;line-height:1.5}
+.exchange-deal-modes,.exchange-deal-sides{display:flex;gap:6px;margin-top:10px}
+.exchange-deal-modes button,.exchange-deal-sides button{flex:1;min-height:36px;padding:7px;border:1px solid #405545;border-radius:8px;background:#17231b;color:#b6c4b3;font-size:10px;cursor:pointer}
+.exchange-deal-modes button.selected,.exchange-deal-sides button.selected{border-color:#93b46a;background:#2a3c26;color:#e6f4d8}
+.exchange-deal-modes .deal-close{flex:0 0 auto;color:#8f9f90}
+.deal-market-quote{margin-top:9px;color:#a4b3a4;font-size:10px;line-height:1.6}
+.deal-list-title{margin-top:10px;color:#c1d2b8;font-size:10px}
+.deal-matching .exchange-row{padding:8px 0;font-size:11px}
+.deal-matching .exchange-row small{font-size:9px}
+.exchange-deal-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.exchange-deal-form label{display:grid;gap:5px;color:#aab8a8;font-size:10px}
+.exchange-deal-form input{min-width:0;width:100%;padding:10px;border:1px solid #405744;border-radius:8px;background:#111b15;color:#e5eee1;font:12px var(--mono)}
+.exchange-deal-form .exchange-fixed-quote{display:grid;align-content:center;gap:3px;color:#99aa9a;font-size:10px}
+.exchange-fixed-quote b{color:#c5e99a;font:14px var(--mono)}.exchange-fixed-quote small{font-size:9px}
+.exchange-deal-form .panel-help,.exchange-deal-form>button{grid-column:1/-1;margin:0}
+.exchange-secondary-title{margin:6px 0 10px;color:#e2ecde;font-weight:700;font-size:13px}
+.exchange-secondary-list{max-height:480px;overflow:auto;padding-right:3px}
+@media(max-width:600px){.exchange-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.exchange-tabs button{min-height:38px;padding:7px 3px;font-size:10px}.market-item{padding:10px}.market-item-bottom{align-items:flex-start}.market-item-bottom>span{max-width:54%;line-height:1.5}.exchange-deal-form{grid-template-columns:1fr 1fr}.exchange-deal-form input{padding:11px 8px}.exchange-career .trade-toolbar{align-items:flex-start}.exchange-career .trade-toolbar select{flex:1}}
